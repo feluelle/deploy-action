@@ -55,9 +55,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        deployment: [deployment.yaml]
+        deployment: [deployment-hibernate.yaml, deployment.yaml]
     outputs:
       DEPLOYMENT_ID: ${{ steps.create-deployment.outputs.DEPLOYMENT_ID }}
+      HIBERNATE_DEPLOYMENT_ID: ${{ steps.create-deployment.outputs.HIBERNATE_DEPLOYMENT_ID }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,8 +99,11 @@ jobs:
           sed -i "s|  name:.*|  name: deploy-action-e2e-${{ env.test_uid }}|g"  e2e-setup/deployment-templates/${{ matrix.deployment }}
 
           DEPLOYMENT_ID=$(astro deployment create --deployment-file e2e-setup/deployment-templates/${{ matrix.deployment }} | yq e '.deployment.metadata.deployment_id' -)
-          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-
+          if [[ "${{ matrix.deployment }}" == "deployment.yaml" ]]; then
+            echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          else
+            echo "HIBERNATE_DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          fi
   default-deploy-tests:
     name: Default Deploy Test
     runs-on: ubuntu-latest
@@ -108,7 +112,10 @@ jobs:
       max-parallel: 1
       matrix:
         deployment_id:
-          ["${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}"]
+          [
+            "${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}",
+            "${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}",
+          ]
         deploy_type: [dags, image-and-dags]
     steps:
       - name: Checkout code
@@ -193,7 +200,10 @@ jobs:
     strategy:
       matrix:
         deployment_id:
-          ["${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}"]
+          [
+            "${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}",
+            "${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}",
+          ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -268,7 +278,10 @@ jobs:
     strategy:
       matrix:
         deployment_id:
-          ["${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}"]
+          [
+            "${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}",
+            "${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}",
+          ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -348,7 +361,10 @@ jobs:
       max-parallel: 1
       matrix:
         deployment_id:
-          ["${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}"]
+          [
+            "${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}",
+            "${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}",
+          ]
         deploy_type: [dags, image-and-dags]
     steps:
       - name: Checkout code
@@ -432,7 +448,10 @@ jobs:
     strategy:
       matrix:
         deployment_id:
-          ["${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}"]
+          [
+            "${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}",
+            "${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}",
+          ]
         deploy_type: [infer, dbt, dags, image-and-dags]
     steps:
       - name: Checkout code
@@ -539,7 +558,10 @@ jobs:
     strategy:
       matrix:
         deployment_id:
-          ["${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}"]
+          [
+            "${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}",
+            "${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}",
+          ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -615,7 +637,10 @@ jobs:
     strategy:
       matrix:
         deployment_id:
-          ["${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}"]
+          [
+            "${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}",
+            "${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}",
+          ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -698,7 +723,10 @@ jobs:
     strategy:
       matrix:
         deployment_id:
-          ["${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}"]
+          [
+            "${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}",
+            "${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}",
+          ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -959,3 +987,4 @@ jobs:
       - name: Delete Deployment
         run: |
           astro deployment delete -f ${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}
+          astro deployment delete -f ${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}
